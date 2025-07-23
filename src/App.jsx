@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase client using Vite env variables
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
   import.meta.env.VITE_SUPABASE_ANON_KEY
@@ -10,14 +9,29 @@ const supabase = createClient(
 export default function App() {
   const [instruments, setInstruments] = useState([]);
   const [newInstrument, setNewInstrument] = useState("");
+  const [user, setUser] = useState(null);
 
-  // Fetch data on load
+  // Get the current user on load
   useEffect(() => {
-    fetchInstruments();
+    const getCurrentUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data?.user) {
+        setUser(data.user);
+        fetchInstruments(data.user.id);
+      } else {
+        console.error("User not logged in:", error?.message);
+      }
+    };
+    getCurrentUser();
   }, []);
 
-  const fetchInstruments = async () => {
-    const { data, error } = await supabase.from("instruments").select("*");
+  // Fetch instruments filtered by current user
+  const fetchInstruments = async (userId) => {
+    const { data, error } = await supabase
+      .from("instruments")
+      .select("*")
+      .eq("user_id", userId);
+
     if (error) {
       console.error("Error fetching instruments:", error.message);
     } else {
@@ -25,12 +39,13 @@ export default function App() {
     }
   };
 
+  // Add instrument with user_id
   const addInstrument = async () => {
-    if (!newInstrument) return;
+    if (!newInstrument || !user) return;
 
     const { data, error } = await supabase
       .from("instruments")
-      .insert([{ name: newInstrument }]);
+      .insert([{ name: newInstrument, user_id: user.id }]);
 
     if (error) {
       alert("Error adding instrument: " + error.message);
@@ -44,20 +59,26 @@ export default function App() {
     <div style={{ padding: "2rem", fontFamily: "sans-serif" }}>
       <h1>🎵 Instruments</h1>
 
-      <div style={{ marginBottom: "1rem" }}>
-        <input
-          value={newInstrument}
-          onChange={(e) => setNewInstrument(e.target.value)}
-          placeholder="Add new instrument"
-        />
-        <button onClick={addInstrument}>Add</button>
-      </div>
+      {!user ? (
+        <p>Please log in</p>
+      ) : (
+        <>
+          <div style={{ marginBottom: "1rem" }}>
+            <input
+              value={newInstrument}
+              onChange={(e) => setNewInstrument(e.target.value)}
+              placeholder="Add new instrument"
+            />
+            <button onClick={addInstrument}>Add</button>
+          </div>
 
-      <ul>
-        {instruments.map((instrument) => (
-          <li key={instrument.id}>{instrument.name}</li>
-        ))}
-      </ul>
+          <ul>
+            {instruments.map((instrument) => (
+              <li key={instrument.id}>{instrument.name}</li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   );
 }
