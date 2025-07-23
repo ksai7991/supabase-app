@@ -37,6 +37,40 @@ function App() {
   useEffect(() => {
     if (user) {
       fetchInstruments();
+
+      // Real-time subscription
+      const channel = supabase
+        .channel('instruments-updates')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'instruments',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('Realtime payload:', payload);
+            if (payload.eventType === 'INSERT') {
+              setInstruments((prev) => [...prev, payload.new]);
+            } else if (payload.eventType === 'DELETE') {
+              setInstruments((prev) =>
+                prev.filter((item) => item.id !== payload.old.id)
+              );
+            } else if (payload.eventType === 'UPDATE') {
+              setInstruments((prev) =>
+                prev.map((item) =>
+                  item.id === payload.new.id ? payload.new : item
+                )
+              );
+            }
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
     }
   }, [user]);
 
@@ -97,7 +131,7 @@ function App() {
       alert('Error adding instrument: ' + error.message);
     } else {
       setInstrumentName('');
-      setInstruments((prev) => [...prev, ...data]);
+      // No need to update local state here; real-time will handle it
     }
   };
 
