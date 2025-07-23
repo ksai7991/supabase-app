@@ -1,58 +1,39 @@
 import { useEffect, useState } from "react";
-import { createClient } from "@supabase/supabase-js";
+import { supabase } from "../supabaseClient";
 
-// Supabase client
-const supabase = createClient(
-  import.meta.env.VITE_SUPABASE_URL,
-  import.meta.env.VITE_SUPABASE_ANON_KEY
-);
-
-function App() {
-  const [instruments, setInstruments] = useState([]);
+export default function Account({ session }) {
+  const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [authMode, setAuthMode] = useState("login"); // or "signup"
+  const [instruments, setInstruments] = useState([]);
   const [newInstrument, setNewInstrument] = useState("");
 
+  // Get current user info
   useEffect(() => {
-    // Check if user is already logged in
-    supabase.auth.getUser().then(({ data: { user } }) => {
+    async function getUserData() {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
-      if (user) getInstruments();
-    });
+      setLoading(false);
+    }
 
-    // Listen to login/logout changes
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
-      if (session?.user) getInstruments();
-    });
-
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    getUserData();
   }, []);
 
-  async function getInstruments() {
-    const { data, error } = await supabase.from("instruments").select();
-    if (!error) setInstruments(data);
-  }
-
-  async function handleAuth(e) {
-    e.preventDefault();
-    if (authMode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) alert("Login error: " + error.message);
-    } else {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) alert("Signup error: " + error.message);
+  // Fetch instruments for the current user
+  useEffect(() => {
+    if (user) {
+      getInstruments();
     }
-  }
+  }, [user]);
 
-  async function logout() {
-    await supabase.auth.signOut();
-    setUser(null);
-    setInstruments([]);
+  async function getInstruments() {
+    const { data, error } = await supabase
+      .from("instruments")
+      .select()
+      .eq("user_id", user.id); // Only fetch user's instruments
+
+    if (!error) setInstruments(data);
   }
 
   async function handleAddInstrument(e) {
@@ -61,7 +42,12 @@ function App() {
 
     const { data, error } = await supabase
       .from("instruments")
-      .insert([{ name: newInstrument.trim() }]);
+      .insert([
+        {
+          name: newInstrument.trim(),
+          user_id: user.id, // Save user ID
+        },
+      ]);
 
     if (error) {
       alert("Error adding instrument: " + error.message);
@@ -71,59 +57,46 @@ function App() {
     }
   }
 
-  if (!user) {
-    return (
-      <div style={{ padding: 20 }}>
-        <h2>{authMode === "login" ? "Login" : "Sign Up"}</h2>
-        <form onSubmit={handleAuth}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          /><br />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          /><br />
-          <button type="submit">{authMode === "login" ? "Login" : "Sign Up"}</button>
-        </form>
-        <button onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")}>
-          Switch to {authMode === "login" ? "Sign Up" : "Login"}
-        </button>
-      </div>
-    );
+  async function handleLogout() {
+    await supabase.auth.signOut();
   }
 
-  return (
-    <div style={{ padding: 20 }}>
-      <h2>Welcome, {user.email}</h2>
-      <button onClick={logout}>Logout</button>
+  if (loading) return <div>Loading...</div>;
 
-      <h3>Add Instrument</h3>
-      <form onSubmit={handleAddInstrument}>
+  return (
+    <div className="p-4 max-w-md mx-auto">
+      <h1 className="text-xl font-semibold mb-2">Welcome, {user.email}</h1>
+
+      <button
+        onClick={handleLogout}
+        className="mb-4 px-4 py-2 bg-red-500 text-white rounded"
+      >
+        Sign out
+      </button>
+
+      <form onSubmit={handleAddInstrument} className="flex mb-4 gap-2">
         <input
           type="text"
-          placeholder="Instrument name"
           value={newInstrument}
           onChange={(e) => setNewInstrument(e.target.value)}
-          required
+          placeholder="Add new instrument"
+          className="flex-grow border p-2 rounded"
         />
-        <button type="submit">Add</button>
+        <button
+          type="submit"
+          className="px-4 py-2 bg-blue-600 text-white rounded"
+        >
+          Add
+        </button>
       </form>
 
-      <h3>Instruments</h3>
-      <ul>
-        {instruments.map((instrument) => (
-          <li key={instrument.id}>{instrument.name}</li>
+      <ul className="space-y-2">
+        {instruments.map((inst) => (
+          <li key={inst.id} className="border p-2 rounded">
+            {inst.name}
+          </li>
         ))}
       </ul>
     </div>
   );
 }
-
-export default App;
