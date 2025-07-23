@@ -13,6 +13,7 @@ function App() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [authMode, setAuthMode] = useState("login"); // or "signup"
+  const [newInstrument, setNewInstrument] = useState("");
 
   useEffect(() => {
     // Check if user is already logged in
@@ -54,6 +55,22 @@ function App() {
     setInstruments([]);
   }
 
+  async function handleAddInstrument(e) {
+    e.preventDefault();
+    if (!newInstrument.trim()) return;
+
+    const { data, error } = await supabase
+      .from("instruments")
+      .insert([{ name: newInstrument.trim() }]);
+
+    if (error) {
+      alert("Error adding instrument: " + error.message);
+    } else {
+      setInstruments([...instruments, ...data]);
+      setNewInstrument("");
+    }
+  }
+
   if (!user) {
     return (
       <div style={{ padding: 20 }}>
@@ -86,6 +103,19 @@ function App() {
     <div style={{ padding: 20 }}>
       <h2>Welcome, {user.email}</h2>
       <button onClick={logout}>Logout</button>
+
+      <h3>Add Instrument</h3>
+      <form onSubmit={handleAddInstrument}>
+        <input
+          type="text"
+          placeholder="Instrument name"
+          value={newInstrument}
+          onChange={(e) => setNewInstrument(e.target.value)}
+          required
+        />
+        <button type="submit">Add</button>
+      </form>
+
       <h3>Instruments</h3>
       <ul>
         {instruments.map((instrument) => (
