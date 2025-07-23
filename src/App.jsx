@@ -12,8 +12,9 @@ function App() {
   const [user, setUser] = useState(null);
   const [instrumentName, setInstrumentName] = useState('');
   const [instruments, setInstruments] = useState([]);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [uploading, setUploading] = useState(false);
 
-  // Load session on mount
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -33,12 +34,11 @@ function App() {
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Fetch instruments when user logs in
   useEffect(() => {
     if (user) {
       fetchInstruments();
+      fetchProfile();
 
-      // Real-time subscription
       const channel = supabase
         .channel('instruments-updates')
         .on(
@@ -50,7 +50,6 @@ function App() {
             filter: `user_id=eq.${user.id}`,
           },
           (payload) => {
-            console.log('Realtime payload:', payload);
             if (payload.eventType === 'INSERT') {
               setInstruments((prev) => [...prev, payload.new]);
             } else if (payload.eventType === 'DELETE') {
@@ -80,10 +79,22 @@ function App() {
       .select('*')
       .eq('user_id', user.id);
 
-    if (error) {
-      console.error('Error fetching instruments:', error.message);
-    } else {
-      setInstruments(data);
+    if (error) console.error('Error fetching instruments:', error.message);
+    else setInstruments(data);
+  };
+
+  const fetchProfile = async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .single();
+
+    if (!error && data?.avatar_url) {
+      const { data: urlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(data.avatar_url);
+      setAvatarUrl(urlData.publicUrl);
     }
   };
 
@@ -93,24 +104,18 @@ function App() {
       password,
     });
 
-    if (error) {
-      alert('Login failed: ' + error.message);
-    } else {
-      setUser(data.user);
-    }
+    if (error) alert('Login failed: ' + error.message);
+    else setUser(data.user);
   };
 
   const handleSignUp = async () => {
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
     });
 
-    if (error) {
-      alert('Sign-up failed: ' + error.message);
-    } else {
-      alert('Check your email for confirmation!');
-    }
+    if (error) alert('Sign-up failed: ' + error.message);
+    else alert('Check your email for confirmation!');
   };
 
   const handleLogout = async () => {
@@ -122,16 +127,45 @@ function App() {
   const handleAddInstrument = async () => {
     if (!instrumentName) return;
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('instruments')
-      .insert([{ name: instrumentName, user_id: user.id }])
-      .select();
+      .insert([{ name: instrumentName, user_id: user.id }]);
 
-    if (error) {
-      alert('Error adding instrument: ' + error.message);
-    } else {
-      setInstrumentName('');
-      // No need to update local state here; real-time will handle it
+    if (error) alert('Error adding instrument: ' + error.message);
+    else setInstrumentName('');
+  };
+
+  const handleAvatarUpload = async (e) => {
+    try {
+      setUploading(true);
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      const { error: updateError } = await supabase
+        .from('profiles')
+        .upsert({ id: user.id, avatar_url: filePath });
+
+      if (updateError) throw updateError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      setAvatarUrl(publicUrlData.publicUrl);
+    } catch (error) {
+      alert('Avatar upload failed: ' + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -162,6 +196,14 @@ function App() {
     <div>
       <h1>Welcome, {user.email}</h1>
       <button onClick={handleLogout}>Logout</button>
+
+      {avatarUrl && (
+        <div>
+          <img src={avatarUrl} alt="Avatar" width={100} style={{ borderRadius: '50%' }} />
+        </div>
+      )}
+      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+      {uploading && <p>Uploading...</p>}
 
       <h2>Your Instruments</h2>
       <ul>
