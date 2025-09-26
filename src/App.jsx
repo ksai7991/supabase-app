@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { createClient } from '@supabase/supabase-js';
+import { useState, useEffect } from "react";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL,
@@ -7,171 +7,169 @@ const supabase = createClient(
 );
 
 function App() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [user, setUser] = useState(null);
-  const [instrumentName, setInstrumentName] = useState('');
+  const [instrumentName, setInstrumentName] = useState("");
   const [instruments, setInstruments] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch session on load and listen for auth changes
+  // Fetch session on load
   useEffect(() => {
     const fetchUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        setUser(session?.user ?? null);
-      } catch (error) {
-        console.error('Error fetching user:', error);
-      } finally {
-        setLoading(false);
-      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setUser(session?.user ?? null);
+      setLoading(false);
     };
 
     fetchUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
+    const { data: listener } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        if (session?.user) {
+          fetchProfile(session.user);
+          fetchInstruments(session.user);
+        } else {
+          setAvatarUrl(null);
+          setInstruments([]);
+        }
+        setLoading(false);
+      }
+    );
 
     return () => {
       listener.subscription.unsubscribe();
     };
   }, []);
 
-  // Fetch instruments and avatar when user logs in
-  useEffect(() => {
-    if (user) {
-      fetchInstruments();
-      fetchAvatar();
-
-      const channel = supabase
-        .channel('instruments-updates')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'instruments',
-            filter: `user_id=eq.${user.id}`,
-          },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setInstruments((prev) => [...prev, payload.new]);
-            } else if (payload.eventType === 'DELETE') {
-              setInstruments((prev) => prev.filter((item) => item.id !== payload.old.id));
-            } else if (payload.eventType === 'UPDATE') {
-              setInstruments((prev) =>
-                prev.map((item) => (item.id === payload.new.id ? payload.new : item))
-              );
-            }
-          }
-        )
-        .subscribe();
-
-      return () => supabase.removeChannel(channel);
-    }
-  }, [user]);
-
-  const fetchInstruments = async () => {
+  // Fetch instruments for a user
+  const fetchInstruments = async (user) => {
     const { data, error } = await supabase
-      .from('instruments')
-      .select('*')
-      .eq('user_id', user.id);
+      .from("instruments")
+      .select("*")
+      .eq("user_id", user.id);
 
-    if (error) console.error('Error fetching instruments:', error.message);
+    if (error) console.error("Error fetching instruments:", error.message);
     else setInstruments(data || []);
   };
 
-  const fetchAvatar = async () => {
-    if (!user) return;
-
+  // Fetch profile & avatar
+  const fetchProfile = async (user) => {
     const { data, error } = await supabase
-      .from('profiles')
-      .select('avatar_url')
-      .eq('id', user.id)
+      .from("profiles")
+      .select("avatar_url")
+      .eq("id", user.id)
       .single();
 
-    if (!error && data?.avatar_url) {
-      const { data: publicData } = supabase.storage
-        .from('avatars')
+    if (error) {
+      console.warn("No profile found:", error.message);
+      return;
+    }
+
+    if (data?.avatar_url) {
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
         .getPublicUrl(data.avatar_url);
-      setAvatarUrl(publicData?.publicUrl ?? null);
+      setAvatarUrl(publicUrlData.publicUrl);
     } else {
       setAvatarUrl(null);
     }
   };
 
+  // Handle login with email
   const handleLogin = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error(error.message);
-      console.log('Login response:', data);
-    } catch (error) {
-      alert(error.message);
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) throw error;
+    } catch (err) {
+      alert(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Handle signup with email
   const handleSignUp = async () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw new Error(error.message);
-      alert('Check your email for confirmation!');
-    } catch (error) {
-      alert(error.message);
+      if (error) throw error;
+      alert("Check your email for confirmation!");
+    } catch (err) {
+      alert(err.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // GitHub login
+  const handleGithubLogin = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "github",
+      options: {
+        redirectTo: "https://stingray-app-5y3zr.ondigitalocean.app/",
+      },
+    });
+  };
+
+  // Handle logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setInstruments([]);
-    setAvatarUrl(null); // only clears UI state, not storage
+    setAvatarUrl(null);
   };
 
+  // Add instrument
   const handleAddInstrument = async () => {
     if (!instrumentName) return;
     const { error } = await supabase
-      .from('instruments')
+      .from("instruments")
       .insert([{ name: instrumentName, user_id: user.id }]);
-    if (error) alert('Error adding instrument: ' + error.message);
-    else setInstrumentName('');
+    if (error) alert("Error adding instrument: " + error.message);
+    else setInstrumentName("");
   };
 
+  // Upload avatar
   const handleAvatarUpload = async (e) => {
     try {
       setUploading(true);
       const file = e.target.files[0];
       if (!file) return;
 
-      const fileExt = file.name.split('.').pop();
-      const filePath = `${user.id}.${fileExt}`;
+      const fileExt = file.name.split(".").pop();
+      const fileName = `${user.id}.${fileExt}`;
+      const filePath = fileName;
 
+      // Upload to storage
       const { error: uploadError } = await supabase.storage
-        .from('avatars')
+        .from("avatars")
         .upload(filePath, file, { upsert: true });
       if (uploadError) throw uploadError;
 
+      // Update profiles table
       const { error: updateError } = await supabase
-        .from('profiles')
-        .update({ avatar_url: filePath })
-        .eq('id', user.id);
+        .from("profiles")
+        .upsert({ id: user.id, avatar_url: filePath });
       if (updateError) throw updateError;
 
-      const { data: publicData } = supabase.storage
-        .from('avatars')
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from("avatars")
         .getPublicUrl(filePath);
-      setAvatarUrl(publicData?.publicUrl ?? null);
-    } catch (error) {
-      alert('Avatar upload failed: ' + error.message);
+
+      setAvatarUrl(publicUrlData.publicUrl);
+    } catch (err) {
+      alert("Avatar upload failed: " + err.message);
     } finally {
       setUploading(false);
     }
@@ -181,7 +179,7 @@ function App() {
 
   if (!user) {
     return (
-      <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: "20px", display: "flex", flexDirection: "column" }}>
         <h1>Login or Sign Up</h1>
         <input
           type="email"
@@ -195,38 +193,41 @@ function App() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button onClick={handleLogin} disabled={loading}>Login</button>
-        <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
-        <button
-          onClick={() =>
-            supabase.auth.signInWithOAuth({
-              provider: 'github',
-              options: {
-                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/'
-              }
-            })
-          }
-        >
-          Login with GitHub
+        <button onClick={handleLogin} disabled={loading}>
+          Login
         </button>
+        <button onClick={handleSignUp} disabled={loading}>
+          Sign Up
+        </button>
+        <button onClick={handleGithubLogin}>Login with GitHub</button>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: "20px" }}>
       <h1>Welcome, {user.email}</h1>
       <button onClick={handleLogout}>Logout</button>
 
       {avatarUrl ? (
         <div>
-          <img src={avatarUrl} alt="Avatar" width={100} style={{ borderRadius: '50%' }} />
+          <img
+            src={avatarUrl}
+            alt="Avatar"
+            width={100}
+            style={{ borderRadius: "50%" }}
+          />
         </div>
       ) : (
-        <p>No avatar uploaded</p>
+        <p>No avatar set</p>
       )}
 
-      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarUpload}
+        disabled={uploading}
+      />
       {uploading && <p>Uploading...</p>}
 
       <h2>Your Instruments</h2>
