@@ -139,7 +139,7 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     setInstruments([]);
-    setAvatarUrl(null); // clear avatar
+   // setAvatarUrl(null); // clear avatar
   };
 
   // Add a new instrument
