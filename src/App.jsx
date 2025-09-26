@@ -14,7 +14,7 @@ function App() {
   const [instruments, setInstruments] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
   // Fetch session on load and listen for auth changes
   useEffect(() => {
@@ -26,7 +26,7 @@ function App() {
       } catch (error) {
         console.error('Error fetching user:', error);
       } finally {
-        setLoading(false); // Stop loading once session is checked
+        setLoading(false);
       }
     };
 
@@ -35,7 +35,7 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', session);
       setUser(session?.user ?? null);
-      setLoading(false); // Ensure loading stops on state change
+      setLoading(false);
     });
 
     return () => {
@@ -63,14 +63,10 @@ function App() {
             if (payload.eventType === 'INSERT') {
               setInstruments((prev) => [...prev, payload.new]);
             } else if (payload.eventType === 'DELETE') {
-              setInstruments((prev) =>
-                prev.filter((item) => item.id !== payload.old.id)
-              );
+              setInstruments((prev) => prev.filter((item) => item.id !== payload.old.id));
             } else if (payload.eventType === 'UPDATE') {
               setInstruments((prev) =>
-                prev.map((item) =>
-                  item.id === payload.new.id ? payload.new : item
-                )
+                prev.map((item) => (item.id === payload.new.id ? payload.new : item))
               );
             }
           }
@@ -94,23 +90,23 @@ function App() {
   const fetchProfile = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('ava    .eq('id', user.id)
+      .select('avatar_url')  // correct column name
+      .eq('id', user.id)
       .single();
 
     if (!error && data?.avatar_url) {
-      const { data: urlData } = supabase.storage
+      const { data: publicUrlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(data.avatar_url);
-      setAvatarUrl(urlData.publicUrl);
+      setAvatarUrl(publicUrlData.publicUrl);
     }
   };
 
-  // Email/password login
   const handleLogin = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error('Login failed: ' + error.message);
+      if (error) throw new Error(error.message);
       console.log('Login response:', data);
     } catch (error) {
       alert(error.message);
@@ -119,16 +115,16 @@ function App() {
     }
   };
 
-  // Email/password signup
   const handleSignUp = async () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw new Error('Sign-up failed: ' + error.message);
+      if (error) throw new Error(error.message);
       alert('Check your email for confirmation!');
     } catch (error) {
       alert(error.message);
-    } se);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -155,7 +151,7 @@ function App() {
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const filePath = fileName;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -164,7 +160,8 @@ function App() {
 
       const { error: updateError } = await supabase
         .from('profiles')
-     d: user.id, avatar_url: filePath });
+        .update({ avatar_url: filePath })
+        .eq('id', user.id);
       if (updateError) throw updateError;
 
       const { data: publicUrlData } = supabase.storage
@@ -178,52 +175,40 @@ function App() {
     }
   };
 
-  // Login screen
-  if (loading) {
-    return <div>Loading...</div>; // Show loading state while checking auth
-  }
+  if (loading) return <div>Loading...</div>;
 
   if (!user) {
     return (
       <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
         <h1>Login or Sign Up</h1>
-        <div style={{ marginBottom: '20px' }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <br />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-        (e) => setPassword(e.target.value)}
-          />
-          <br />
-          <button onClick={handleLogin} disabled={loading}>Login</button>
-          <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
-        </div>
-        <div>
-          <button
-            onClick={() =>
-              supabase.auth.signInWithOAuth({
-                provider: 'github',
-                options: {
-                  redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/',
-                },
-              })
-            }
-          >
-            Login with GitHub
-          </button>
-        </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+        <button onClick={handleLogin} disabled={loading}>Login</button>
+        <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
+        <button
+          onClick={() =>
+            supabase.auth.signInWithOAuth({
+              provider: 'github',
+              options: { redirectTo: window.location.origin },
+            })
+          }
+        >
+          Login with GitHub
+        </button>
       </div>
     );
   }
 
-  // Dashboard
   return (
     <div style={{ padding: '20px' }}>
       <h1>Welcome, {user.email}</h1>
@@ -231,18 +216,10 @@ function App() {
 
       {avatarUrl && (
         <div>
-          <img
-            src={avatarUrl}
-            alt="Avatar"
-            width={100}
-            style={{ borderRadius: '50%' }}
-          />
-        </div>  <input
-        type="file"
-        accept="image/*"
-        onChange={handleAvatarUpload}
-        disabled={uploading}
-      />
+          <img src={avatarUrl} alt="Avatar" width={100} style={{ borderRadius: '50%' }} />
+        </div>
+      )}
+      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
       {uploading && <p>Uploading...</p>}
 
       <h2>Your Instruments</h2>
