@@ -18,9 +18,7 @@ function App() {
   // Fetch session on load and listen for auth changes
   useEffect(() => {
     const fetchUser = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user ?? null);
     };
 
@@ -156,31 +154,34 @@ function App() {
     }
   };
 
-  // Render login / signup screen
+  // Login screen
   if (!user) {
     return (
       <div style={{ padding: '20px' }}>
         <h1>Login or Sign Up</h1>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <br />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <br />
-        <button onClick={handleLogin}>Login</button>
-        <button onClick={handleSignUp}>Sign Up</button>
+        {/* Email/Password login */}
+        <div style={{ marginBottom: '20px' }}>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <br />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <br />
+          <button onClick={handleLogin}>Login</button>
+          <button onClick={handleSignUp}>Sign Up</button>
+        </div>
 
         {/* GitHub OAuth login */}
-        <div style={{ marginTop: '20px' }}>
+        <div>
           <button
             onClick={() =>
               supabase.auth.signInWithOAuth({
@@ -198,7 +199,7 @@ function App() {
     );
   }
 
-  // Render dashboard / instruments page
+  // Dashboard
   return (
     <div style={{ padding: '20px' }}>
       <h1>Welcome, {user.email}</h1>
