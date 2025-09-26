@@ -7,8 +7,6 @@ const supabase = createClient(
 );
 
 function App() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
   const [instrumentName, setInstrumentName] = useState('');
   const [instruments, setInstruments] = useState([]);
@@ -104,32 +102,6 @@ function App() {
     }
   };
 
-  const handleLogin = async () => {
-    setLoading(true);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw new Error('Login failed: ' + error.message);
-      console.log('Login response:', data);
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async () => {
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      if (error) throw new Error('Sign-up failed: ' + error.message);
-      alert('Check your email for confirmation!');
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -183,25 +155,7 @@ function App() {
   if (!user) {
     return (
       <div style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
-        <h1>Login or Sign Up</h1>
-        <div style={{ marginBottom: '20px' }}>
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <br />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-          <br />
-          <button onClick={handleLogin} disabled={loading}>Login</button>
-          <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
-        </div>
+        <h1>Login</h1>
         <div>
           <p>Test GitHub section</p> {/* Temporary debug text */}
           <button
