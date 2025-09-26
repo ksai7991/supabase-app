@@ -15,6 +15,7 @@ function App() {
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
 
+  // Fetch session on load and listen for auth changes
   useEffect(() => {
     const fetchUser = async () => {
       const {
@@ -25,15 +26,14 @@ function App() {
 
     fetchUser();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
 
     return () => listener.subscription.unsubscribe();
   }, []);
 
+  // Fetch instruments and profile when user is logged in
   useEffect(() => {
     if (user) {
       fetchInstruments();
@@ -67,9 +67,7 @@ function App() {
         )
         .subscribe();
 
-      return () => {
-        supabase.removeChannel(channel);
-      };
+      return () => supabase.removeChannel(channel);
     }
   }, [user]);
 
@@ -98,25 +96,16 @@ function App() {
     }
   };
 
+  // Email/password login
   const handleLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert('Login failed: ' + error.message);
-    else {
-      setUser(data.user);
-      window.location.href = 'https://stingray-app-5y3zr.ondigitalocean.app/';
-    }
+    else window.location.href = 'https://stingray-app-5y3zr.ondigitalocean.app/';
   };
 
+  // Email/password signup
   const handleSignUp = async () => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-
+    const { error } = await supabase.auth.signUp({ email, password });
     if (error) alert('Sign-up failed: ' + error.message);
     else alert('Check your email for confirmation!');
   };
@@ -129,11 +118,9 @@ function App() {
 
   const handleAddInstrument = async () => {
     if (!instrumentName) return;
-
     const { error } = await supabase
       .from('instruments')
       .insert([{ name: instrumentName, user_id: user.id }]);
-
     if (error) alert('Error adding instrument: ' + error.message);
     else setInstrumentName('');
   };
@@ -151,19 +138,16 @@ function App() {
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filePath, file, { upsert: true });
-
       if (uploadError) throw uploadError;
 
       const { error: updateError } = await supabase
         .from('profiles')
         .upsert({ id: user.id, avatar_url: filePath });
-
       if (updateError) throw updateError;
 
       const { data: publicUrlData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
-
       setAvatarUrl(publicUrlData.publicUrl);
     } catch (error) {
       alert('Avatar upload failed: ' + error.message);
@@ -172,16 +156,19 @@ function App() {
     }
   };
 
+  // Render login / signup screen
   if (!user) {
     return (
-      <div>
+      <div style={{ padding: '20px' }}>
         <h1>Login or Sign Up</h1>
+
         <input
           type="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
+        <br />
         <input
           type="password"
           placeholder="Password"
@@ -191,26 +178,29 @@ function App() {
         <br />
         <button onClick={handleLogin}>Login</button>
         <button onClick={handleSignUp}>Sign Up</button>
-        <br />
-        <button
-          onClick={() =>
-            supabase.auth.signInWithOAuth({
-              provider: 'github',
-              options: {
-                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/',
-              },
-            })
-          }
-          style={{ marginTop: '10px' }}
-        >
-          Login with GitHub
-        </button>
+
+        {/* GitHub OAuth login */}
+        <div style={{ marginTop: '20px' }}>
+          <button
+            onClick={() =>
+              supabase.auth.signInWithOAuth({
+                provider: 'github',
+                options: {
+                  redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/',
+                },
+              })
+            }
+          >
+            Login with GitHub
+          </button>
+        </div>
       </div>
     );
   }
 
+  // Render dashboard / instruments page
   return (
-    <div>
+    <div style={{ padding: '20px' }}>
       <h1>Welcome, {user.email}</h1>
       <button onClick={handleLogout}>Logout</button>
 
