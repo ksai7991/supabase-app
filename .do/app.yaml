@@ -1,0 +1,41 @@
+alerts:
+- rule: DEPLOYMENT_FAILED
+- rule: DOMAIN_FAILED
+envs:
+- key: VITE_SUPABASE_URL
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:RfxVts7ARTJSYrCezD/GvbURyRHCnslD:yx27qaGTOSIrHb7/RFgVhQ/RDTSX3dh6muTKCdXzsEi36vjzpr8j4vl1pSKf49x2RNtz/2VQ21o=]
+- key: VITE_SUPABASE_URL_ANOTHER
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:RfxVts7ARTJSYrCezD/GvbURyRHCnslD:yx27qaGTOSIrHb7/RFgVhQ/RDTSX3dh6muTKCdXzsEi36vjzpr8j4vl1pSKf49x2RNtz/2VQ21o=]
+- key: VITE_SUPABASE_ANON_KEY
+  scope: RUN_AND_BUILD_TIME
+  type: SECRET
+  value: EV[1:ZCixhUsZ7ImIoXhOrdaY9nwxVaILGOGl:CP9x+OhfhT5cXNghh8nJNweYkmYWONDM0y39ofQK8UYNlRWu7f4g6/a1pMzWU0zg5WwxounwcYmMJUZbz7e46FI372BdTyx3XtIvoZTCiv0x2A5pgSvR0xTPHEBfGovQ5mQQ/BKQ5h7jWPg8HVnx+hxROLrN2JejKH9wXgaxiW+Qux5Q/KqJS3LmMVn105PR1vnjNen91+kqxST5LFOVntYpOWI0iI7C9ufuVgXmuc0nMBlgoxcxhSwzNbFwxvThugTTjO6mFMIzmWsWSKmfIo8XNePlcxK699MA/Y1CmhA=]
+features:
+- buildpack-stack=ubuntu-22
+ingress:
+  rules:
+  - component:
+      name: supabase-app
+    match:
+      authority:
+        exact: ""
+      path:
+        prefix: /
+name: supabase-app
+region: blr
+services:
+- build_command: npm install && npm run build
+  environment_slug: node-js
+  github:
+    branch: main
+    deploy_on_push: true
+    repo: ksai7991/supabase-app
+  http_port: 5173
+  instance_count: 2
+  instance_size_slug: apps-s-1vcpu-1gb
+  name: supabase-app
+  source_dir: /
