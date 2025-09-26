@@ -24,7 +24,7 @@ function App() {
         console.log('Initial Session:', session);
         setUser(session?.user ?? null);
       } catch (error) {
-        console.error('Error fetching );
+        console.error('Error fetching user:', error);
       } finally {
         setLoading(false); // Stop loading once session is checked
       }
