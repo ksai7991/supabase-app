@@ -16,13 +16,11 @@ function App() {
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Fetch session and listen for auth changes
+  // Fetch session on load and listen for auth changes
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const {
-          data: { session }
-        } = await supabase.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -38,10 +36,12 @@ function App() {
       setLoading(false);
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
-  // Fetch instruments and profile avatar when user is logged in
+  // Fetch instruments and avatar when user logs in
   useEffect(() => {
     if (user) {
       fetchInstruments();
@@ -61,10 +61,10 @@ function App() {
             if (payload.eventType === 'INSERT') {
               setInstruments((prev) => [...prev, payload.new]);
             } else if (payload.eventType === 'DELETE') {
-              setInstruments((prev) => prev.filter((i) => i.id !== payload.old.id));
+              setInstruments((prev) => prev.filter((item) => item.id !== payload.old.id));
             } else if (payload.eventType === 'UPDATE') {
               setInstruments((prev) =>
-                prev.map((i) => (i.id === payload.new.id ? payload.new : i))
+                prev.map((item) => (item.id === payload.new.id ? payload.new : item))
               );
             }
           }
@@ -75,7 +75,6 @@ function App() {
     }
   }, [user]);
 
-  // Fetch instruments for current user
   const fetchInstruments = async () => {
     const { data, error } = await supabase
       .from('instruments')
@@ -86,7 +85,6 @@ function App() {
     else setInstruments(data || []);
   };
 
-  // Fetch avatar for current user
   const fetchAvatar = async () => {
     if (!user) return;
 
@@ -102,11 +100,10 @@ function App() {
         .getPublicUrl(data.avatar_url);
       setAvatarUrl(publicData?.publicUrl ?? null);
     } else {
-      setAvatarUrl(null); // no avatar yet
+      setAvatarUrl(null);
     }
   };
 
-  // Login with email/password
   const handleLogin = async () => {
     setLoading(true);
     try {
@@ -120,7 +117,6 @@ function App() {
     }
   };
 
-  // Sign up with email/password
   const handleSignUp = async () => {
     setLoading(true);
     try {
@@ -134,27 +130,22 @@ function App() {
     }
   };
 
-  // Logout
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setUser(null);
     setInstruments([]);
-   // setAvatarUrl(null); // clear avatar
+    setAvatarUrl(null); // only clears UI state, not storage
   };
 
-  // Add a new instrument
   const handleAddInstrument = async () => {
     if (!instrumentName) return;
-
     const { error } = await supabase
       .from('instruments')
       .insert([{ name: instrumentName, user_id: user.id }]);
-
     if (error) alert('Error adding instrument: ' + error.message);
     else setInstrumentName('');
   };
 
-  // Upload avatar tied to current user
   const handleAvatarUpload = async (e) => {
     try {
       setUploading(true);
@@ -162,7 +153,7 @@ function App() {
       if (!file) return;
 
       const fileExt = file.name.split('.').pop();
-      const filePath = `avatars/${user.id}.${fileExt}`; // store per user
+      const filePath = `${user.id}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -178,7 +169,6 @@ function App() {
       const { data: publicData } = supabase.storage
         .from('avatars')
         .getPublicUrl(filePath);
-
       setAvatarUrl(publicData?.publicUrl ?? null);
     } catch (error) {
       alert('Avatar upload failed: ' + error.message);
@@ -191,7 +181,7 @@ function App() {
 
   if (!user) {
     return (
-      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
         <h1>Login or Sign Up</h1>
         <input
           type="email"
@@ -205,19 +195,15 @@ function App() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button onClick={handleLogin} disabled={loading}>
-          Login
-        </button>
-        <button onClick={handleSignUp} disabled={loading}>
-          Sign Up
-        </button>
+        <button onClick={handleLogin} disabled={loading}>Login</button>
+        <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
         <button
           onClick={() =>
             supabase.auth.signInWithOAuth({
               provider: 'github',
               options: {
-                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app', // live redirect
-              },
+                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/'
+              }
             })
           }
         >
@@ -232,22 +218,15 @@ function App() {
       <h1>Welcome, {user.email}</h1>
       <button onClick={handleLogout}>Logout</button>
 
-      {avatarUrl && (
+      {avatarUrl ? (
         <div>
-          <img
-            src={avatarUrl}
-            alt="Avatar"
-            width={100}
-            style={{ borderRadius: '50%' }}
-          />
+          <img src={avatarUrl} alt="Avatar" width={100} style={{ borderRadius: '50%' }} />
         </div>
+      ) : (
+        <p>No avatar uploaded</p>
       )}
-      <input
-        type="file"
-        accept="image/*"
-        onChange={handleAvatarUpload}
-        disabled={uploading}
-      />
+
+      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
       {uploading && <p>Uploading...</p>}
 
       <h2>Your Instruments</h2>
