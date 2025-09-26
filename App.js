@@ -14,21 +14,33 @@ function App() {
   const [instruments, setInstruments] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(true); // Add loading state
 
   // Fetch session on load and listen for auth changes
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial Session:', session);
+        setUser(session?.user ?? null);
+      } catch (error) {
+        console.error('Error fetching session:', error.message);
+      } finally {
+        setLoading(false); // Stop loading once session is checked
+      }
     };
 
     fetchUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed:', session);
       setUser(session?.user ?? null);
+      setLoading(false); // Ensure loading stops on state change
     });
 
-    return () => listener.subscription.unsubscribe();
+    return () => {
+      listener.subscription.unsubscribe();
+    };
   }, []);
 
   // Fetch instruments and profile when user is logged in
@@ -76,7 +88,7 @@ function App() {
       .eq('user_id', user.id);
 
     if (error) console.error('Error fetching instruments:', error.message);
-    else setInstruments(data);
+    else setInstruments(data || []);
   };
 
   const fetchProfile = async () => {
@@ -96,16 +108,30 @@ function App() {
 
   // Email/password login
   const handleLogin = async () => {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) alert('Login failed: ' + error.message);
-    // No redirect needed; auth state change will handle re-render
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw new Error('Login failed: ' + error.message);
+      console.log('Login response:', data);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   // Email/password signup
   const handleSignUp = async () => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) alert('Sign-up failed: ' + error.message);
-    else alert('Check your email for confirmation!');
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      if (error) throw new Error('Sign-up failed: ' + error.message);
+      alert('Check your email for confirmation!');
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -155,12 +181,14 @@ function App() {
   };
 
   // Login screen
+  if (loading) {
+    return <div>Loading...</div>; // Show loading state while checking auth
+  }
+
   if (!user) {
     return (
       <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
         <h1>Login or Sign Up</h1>
-
-        {/* Email/Password login */}
         <div style={{ marginBottom: '20px' }}>
           <input
             type="email"
@@ -176,11 +204,9 @@ function App() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <br />
-          <button onClick={handleLogin}>Login</button>
-          <button onClick={handleSignUp}>Sign Up</button>
+          <button onClick={handleLogin} disabled={loading}>Login</button>
+          <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
         </div>
-
-        {/* GitHub OAuth login */}
         <div>
           <button
             onClick={() =>
