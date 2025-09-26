@@ -90,7 +90,7 @@ function App() {
   const fetchProfile = async () => {
     const { data, error } = await supabase
       .from('profiles')
-      .select('avatar_url')  // correct column name
+      .select('avatar_url')
       .eq('id', user.id)
       .single();
 
@@ -199,7 +199,9 @@ function App() {
           onClick={() =>
             supabase.auth.signInWithOAuth({
               provider: 'github',
-              options: { 'https://stingray-app-5y3zr.ondigitalocean.app/' };
+              options: {
+                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/'
+              }
             })
           }
         >
