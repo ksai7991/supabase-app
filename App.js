@@ -14,9 +14,8 @@ function App() {
   const [instruments, setInstruments] = useState([]);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [loading, setLoading] = useState(true); // Add loading state
+  const [loading, setLoading] = useState(true);
 
-  // Fetch session on load and listen for auth changes
   useEffect(() => {
     const fetchUser = async () => {
       try {
@@ -26,7 +25,7 @@ function App() {
       } catch (error) {
         console.error('Error fetching session:', error.message);
       } finally {
-        setLoading(false); // Stop loading once session is checked
+        setLoading(false);
       }
     };
 
@@ -35,7 +34,7 @@ function App() {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       console.log('Auth state changed:', session);
       setUser(session?.user ?? null);
-      setLoading(false); // Ensure loading stops on state change
+      setLoading(false);
     });
 
     return () => {
@@ -43,7 +42,6 @@ function App() {
     };
   }, []);
 
-  // Fetch instruments and profile when user is logged in
   useEffect(() => {
     if (user) {
       fetchInstruments();
@@ -106,7 +104,6 @@ function App() {
     }
   };
 
-  // Email/password login
   const handleLogin = async () => {
     setLoading(true);
     try {
@@ -120,7 +117,6 @@ function App() {
     }
   };
 
-  // Email/password signup
   const handleSignUp = async () => {
     setLoading(true);
     try {
@@ -180,14 +176,13 @@ function App() {
     }
   };
 
-  // Login screen
   if (loading) {
-    return <div>Loading...</div>; // Show loading state while checking auth
+    return <div>Loading...</div>;
   }
 
   if (!user) {
     return (
-      <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
         <h1>Login or Sign Up</h1>
         <div style={{ marginBottom: '20px' }}>
           <input
@@ -208,6 +203,7 @@ function App() {
           <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
         </div>
         <div>
+          <p>Test GitHub section</p> {/* Temporary debug text */}
           <button
             onClick={() =>
               supabase.auth.signInWithOAuth({
@@ -225,7 +221,6 @@ function App() {
     );
   }
 
-  // Dashboard
   return (
     <div style={{ padding: '20px' }}>
       <h1>Welcome, {user.email}</h1>
