@@ -199,7 +199,7 @@ function App() {
           onClick={() =>
             supabase.auth.signInWithOAuth({
               provider: 'github',
-              options: { 'https://stingray-app-5y3zr.ondigitalocean.app/' },
+              options: { 'https://stingray-app-5y3zr.ondigitalocean.app/' };
             })
           }
         >
