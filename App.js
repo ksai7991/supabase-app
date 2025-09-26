@@ -26,7 +26,7 @@ function App() {
     fetchUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
+      (_event, session) => {
         setUser(session?.user ?? null);
       }
     );
@@ -107,7 +107,6 @@ function App() {
     if (error) alert('Login failed: ' + error.message);
     else {
       setUser(data.user);
-      // Redirect after login
       window.location.href = 'https://stingray-app-5y3zr.ondigitalocean.app/';
     }
   };
@@ -194,14 +193,14 @@ function App() {
         <button onClick={handleSignUp}>Sign Up</button>
         <br />
         <button
-          onClick={async () => {
-            await supabase.auth.signInWithOAuth({
+          onClick={() =>
+            supabase.auth.signInWithOAuth({
               provider: 'github',
               options: {
                 redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/',
               },
-            });
-          }}
+            })
+          }
           style={{ marginTop: '10px' }}
         >
           Login with GitHub
