@@ -98,7 +98,7 @@ function App() {
   const handleLogin = async () => {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) alert('Login failed: ' + error.message);
-    else window.location.href = 'https://stingray-app-5y3zr.ondigitalocean.app/';
+    // No redirect needed; auth state change will handle re-render
   };
 
   // Email/password signup
@@ -157,7 +157,7 @@ function App() {
   // Login screen
   if (!user) {
     return (
-      <div style={{ padding: '20px' }}>
+      <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
         <h1>Login or Sign Up</h1>
 
         {/* Email/Password login */}
