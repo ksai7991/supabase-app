@@ -20,8 +20,9 @@ function App() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial Session:', session);
+        const {
+          data: { session }
+        } = await supabase.auth.getSession();
         setUser(session?.user ?? null);
       } catch (error) {
         console.error('Error fetching user:', error);
@@ -33,17 +34,14 @@ function App() {
     fetchUser();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed:', session);
       setUser(session?.user ?? null);
       setLoading(false);
     });
 
-    return () => {
-      listener.subscription.unsubscribe();
-    };
+    return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Fetch instruments and profile when user is logged in
+  // Fetch instruments and profile when user logs in
   useEffect(() => {
     if (user) {
       fetchInstruments();
@@ -63,10 +61,10 @@ function App() {
             if (payload.eventType === 'INSERT') {
               setInstruments((prev) => [...prev, payload.new]);
             } else if (payload.eventType === 'DELETE') {
-              setInstruments((prev) => prev.filter((item) => item.id !== payload.old.id));
+              setInstruments((prev) => prev.filter((i) => i.id !== payload.old.id));
             } else if (payload.eventType === 'UPDATE') {
               setInstruments((prev) =>
-                prev.map((item) => (item.id === payload.new.id ? payload.new : item))
+                prev.map((i) => (i.id === payload.new.id ? payload.new : i))
               );
             }
           }
@@ -88,6 +86,8 @@ function App() {
   };
 
   const fetchProfile = async () => {
+    if (!user) return;
+
     const { data, error } = await supabase
       .from('profiles')
       .select('avatar_url')
@@ -95,10 +95,10 @@ function App() {
       .single();
 
     if (!error && data?.avatar_url) {
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(data.avatar_url);
-      setAvatarUrl(publicUrlData.publicUrl);
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(data.avatar_url);
+      setAvatarUrl(publicData?.publicUrl ?? null);
+    } else {
+      setAvatarUrl(null);
     }
   };
 
@@ -132,13 +132,16 @@ function App() {
     await supabase.auth.signOut();
     setUser(null);
     setInstruments([]);
+    setAvatarUrl(null);
   };
 
   const handleAddInstrument = async () => {
     if (!instrumentName) return;
+
     const { error } = await supabase
       .from('instruments')
       .insert([{ name: instrumentName, user_id: user.id }]);
+
     if (error) alert('Error adding instrument: ' + error.message);
     else setInstrumentName('');
   };
@@ -150,8 +153,7 @@ function App() {
       if (!file) return;
 
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}.${fileExt}`;
-      const filePath = fileName;
+      const filePath = `avatars/${user.id}.${fileExt}`;
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -164,10 +166,8 @@ function App() {
         .eq('id', user.id);
       if (updateError) throw updateError;
 
-      const { data: publicUrlData } = supabase.storage
-        .from('avatars')
-        .getPublicUrl(filePath);
-      setAvatarUrl(publicUrlData.publicUrl);
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setAvatarUrl(publicData?.publicUrl ?? null);
     } catch (error) {
       alert('Avatar upload failed: ' + error.message);
     } finally {
@@ -179,7 +179,10 @@ function App() {
 
   if (!user) {
     return (
-      <div id="root" style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <div
+        id="root"
+        style={{ padding: '20px', display: 'flex', flexDirection: 'column' }}
+      >
         <h1>Login or Sign Up</h1>
         <input
           type="email"
@@ -193,15 +196,19 @@ function App() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
-        <button onClick={handleLogin} disabled={loading}>Login</button>
-        <button onClick={handleSignUp} disabled={loading}>Sign Up</button>
+        <button onClick={handleLogin} disabled={loading}>
+          Login
+        </button>
+        <button onClick={handleSignUp} disabled={loading}>
+          Sign Up
+        </button>
         <button
           onClick={() =>
             supabase.auth.signInWithOAuth({
               provider: 'github',
               options: {
-                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app/'
-              }
+                redirectTo: 'https://stingray-app-5y3zr.ondigitalocean.app', // correct redirect
+              },
             })
           }
         >
@@ -218,10 +225,20 @@ function App() {
 
       {avatarUrl && (
         <div>
-          <img src={avatarUrl} alt="Avatar" width={100} style={{ borderRadius: '50%' }} />
+          <img
+            src={avatarUrl}
+            alt="Avatar"
+            width={100}
+            style={{ borderRadius: '50%' }}
+          />
         </div>
       )}
-      <input type="file" accept="image/*" onChange={handleAvatarUpload} disabled={uploading} />
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleAvatarUpload}
+        disabled={uploading}
+      />
       {uploading && <p>Uploading...</p>}
 
       <h2>Your Instruments</h2>
