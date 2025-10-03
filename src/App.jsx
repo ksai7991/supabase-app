@@ -252,29 +252,6 @@ if (!user) {
 
 
   return (
-        <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
-      {/* Background video */}
-      <video
-        autoPlay
-        loop
-        muted
-        playsInline
-        style={{
-          position: "relative",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "contain",
-          zIndex: -1,
-        }}
-      >
-        <source
-          src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
-          type="video/mp4"
-        />
-        Your browser does not support the video tag.
-      </video>
     <div style={{ padding: "20px" }}>
       <h1>Welcome, {user.email}</h1>
       <button onClick={handleLogout}>Logout</button>
