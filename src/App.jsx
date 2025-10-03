@@ -260,7 +260,7 @@ return (
       muted
       playsInline
       style={{
-        position: "absolute",
+        position: "relative",
         top: 0,
         left: 0,
         width: "100%",
@@ -283,8 +283,8 @@ return (
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)", // center vertically + horizontally
-        width: "90%", // responsive width
-        maxWidth: "600px",
+        width: "75%", // responsive width
+        maxWidth: "400px",
         padding: "40px",
         backgroundColor: "rgba(255, 255, 255, 0.85)",
         borderRadius: "12px",
