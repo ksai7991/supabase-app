@@ -196,7 +196,7 @@ function App() {
             zIndex: -1,
           }}
         >
-          <source src="/videos/login-bg.mp4" type="video/mp4" />
+          <source src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4" type="video/mp4" />
           Your browser does not support the video tag.
         </video>
 
