@@ -177,53 +177,77 @@ function App() {
 
   if (loading) return <div>Loading...</div>;
 
-<div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
-  {/* Background video */}
-  <video
-    autoPlay
-    loop
-    muted
-    playsInline
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      width: "100%",
-      height: "100%",
-      objectFit: "cover",
-      zIndex: -1,
-    }}
-  >
-    <source
-      src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
-      type="video/mp4"
-    />
-    Your browser does not support the video tag.
-  </video>
+if (!user) {
+  return (
+    <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+      {/* Background video */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "100%",
+          objectFit: "cover",
+          zIndex: -1,
+        }}
+      >
+        <source
+          src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
+          type="video/mp4"
+        />
+        Your browser does not support the video tag.
+      </video>
 
-  {/* Centered login form */}
-  <div
-    style={{
-      position: "absolute",
-      top: "50%",
-      left: "50%",
-      transform: "translate(-50%, -50%)",
-      width: "350px",          // fixed width
-      padding: "40px",
-      display: "flex",
-      flexDirection: "column",
-      backgroundColor: "rgba(255, 255, 255, 0.85)", // semi-transparent
-      borderRadius: "12px",
-      boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
-      zIndex: 1,
-    }}
-  >
-    <h1>Login or Sign Up</h1>
-    <input type="email" placeholder="Email" />
-    <input type="password" placeholder="Password" />
-    <button>Login</button>
-  </div>
-</div>
+      {/* Centered login form */}
+      <div
+        style={{
+          position: "absolute",            // overlay on video
+          top: "50%",                      // vertical center
+          left: "50%",                     // horizontal center
+          transform: "translate(-50%, -50%)", // exact center
+          width: "350px",                  // fixed width
+          padding: "40px",
+          display: "flex",
+          flexDirection: "column",
+          backgroundColor: "rgba(255, 255, 255, 0.85)", // semi-transparent
+          borderRadius: "12px",
+          boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+          zIndex: 1,                        // above video
+        }}
+      >
+        <h1 style={{ textAlign: "center" }}>Login or Sign Up</h1>
+
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          style={{ marginBottom: "10px", padding: "8px" }}
+        />
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          style={{ marginBottom: "10px", padding: "8px" }}
+        />
+
+        <button onClick={handleLogin} disabled={loading} style={{ marginBottom: "10px" }}>
+          Login
+        </button>
+        <button onClick={handleSignUp} disabled={loading} style={{ marginBottom: "10px" }}>
+          Sign Up
+        </button>
+        <button onClick={handleGithubLogin}>Login with GitHub</button>
+      </div>
+    </div>
+  );
+}
 
 
 
