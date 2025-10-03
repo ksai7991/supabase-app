@@ -208,8 +208,8 @@ function App() {
             padding: "20px",
             display: "flex",
             flexDirection: "column",
-            width: "100%",
-            height: "100vh",
+            width: "20%",
+            height: "20vh",
             margin: "0 auto",
             backgroundColor: "rgba(255, 255, 255, 0.85)",
             borderRadius: "0"
