@@ -251,18 +251,58 @@ if (!user) {
 
 
 
-  return (
-    <div style={{ padding: "20px" }}>
+return (
+  <div style={{ position: "relative", height: "100vh", overflow: "hidden", padding: "20px" }}>
+    {/* Background video */}
+    <video
+      autoPlay
+      loop
+      muted
+      playsInline
+      style={{
+        position: "absolute",
+        top: 0,
+        left: 0,
+        width: "100%",
+        height: "100%",
+        objectFit: "cover",  // use cover for full-screen background
+        zIndex: -1,
+      }}
+    >
+      <source
+        src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
+        type="video/mp4"
+      />
+      Your browser does not support the video tag.
+    </video>
+
+    {/* Content */}
+    <div
+      style={{
+        position: "relative",
+        zIndex: 1,
+        maxWidth: "600px",
+        margin: "0 auto",
+        padding: "40px",
+        backgroundColor: "rgba(255, 255, 255, 0.85)",
+        borderRadius: "12px",
+        boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+      }}
+    >
       <h1>Welcome, {user.email}</h1>
-      <button onClick={handleLogout}>Logout</button>
+      <button onClick={handleLogout} style={{ marginBottom: "20px" }}>Logout</button>
 
       {avatarUrl ? (
-        <div>
+        <div style={{ marginBottom: "20px" }}>
           <img
             src={avatarUrl}
             alt="Avatar"
-            width={100}
-            style={{ borderRadius: "50%" }}
+            width={150}  // bigger avatar
+            height={150}
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
         </div>
       ) : (
@@ -274,25 +314,29 @@ if (!user) {
         accept="image/*"
         onChange={handleAvatarUpload}
         disabled={uploading}
+        style={{ marginBottom: "10px" }}
       />
       {uploading && <p>Uploading...</p>}
 
-      <h2>Your Instruments</h2>
+      <h2>Your Favorite Movies</h2>
       <ul>
-        {instruments.map((inst) => (
-          <li key={inst.id}>{inst.name}</li>
+        {instruments.map((movie) => (
+          <li key={movie.id}>{movie.name}</li>
         ))}
       </ul>
 
       <input
         type="text"
-        placeholder="Add new instrument"
+        placeholder="Add new favorite movie"
         value={instrumentName}
         onChange={(e) => setInstrumentName(e.target.value)}
+        style={{ marginBottom: "10px", padding: "8px", width: "100%" }}
       />
       <button onClick={handleAddInstrument}>Add</button>
     </div>
-  );
+  </div>
+);
+
 }
 
 export default App;
