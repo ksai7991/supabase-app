@@ -179,27 +179,64 @@ function App() {
 
   if (!user) {
     return (
-      <div style={{ padding: "20px", display: "flex", flexDirection: "column" }}>
-        <h1>Login or Sign Up</h1>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <button onClick={handleLogin} disabled={loading}>
-          Login
-        </button>
-        <button onClick={handleSignUp} disabled={loading}>
-          Sign Up
-        </button>
-        <button onClick={handleGithubLogin}>Login with GitHub</button>
+      <div style={{ position: "relative", height: "100vh", overflow: "hidden" }}>
+        {/* Background video */}
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+            zIndex: -1,
+          }}
+        >
+          <source src="/videos/login-bg.mp4" type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+
+        {/* Login form */}
+        <div
+          style={{
+            position: "relative",
+            zIndex: 1,
+            padding: "20px",
+            display: "flex",
+            flexDirection: "column",
+            maxWidth: "400px",
+            margin: "0 auto",
+            marginTop: "10%",
+            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            borderRadius: "8px",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+          }}
+        >
+          <h1>Login or Sign Up</h1>
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={handleLogin} disabled={loading}>
+            Login
+          </button>
+          <button onClick={handleSignUp} disabled={loading}>
+            Sign Up
+          </button>
+          <button onClick={handleGithubLogin}>Login with GitHub</button>
+        </div>
       </div>
     );
   }
