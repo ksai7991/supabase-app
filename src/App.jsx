@@ -116,7 +116,7 @@ function App() {
     await supabase.auth.signInWithOAuth({
       provider: "github",
       options: {
-        redirectTo: "https://stingray-app-5y3zr.ondigitalocean.app/",
+        redirectTo: "https://supabase-app-bay.vercel.app/",
       },
     });
   };
