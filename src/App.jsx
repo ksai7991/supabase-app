@@ -203,16 +203,18 @@ function App() {
         {/* Login form */}
         <div
           style={{
-            position: "relative",
-            zIndex: 1,
-            padding: "20px",
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            padding: "40px",
             display: "flex",
             flexDirection: "column",
-            width: "100%",
-            height: "100vh",
-            margin: "0 auto",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
-            borderRadius: "0"
+            width: "350px",
+            backgroundColor: "rgba(255, 255, 255, 0.8)",
+            borderRadius: "10px",
+            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+            zIndex: 1,
           }}
         >
           <h1>Login or Sign Up</h1>
