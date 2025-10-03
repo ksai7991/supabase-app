@@ -197,7 +197,7 @@ if (!user) {
         }}
       >
         <source
-          src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
+          src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/Tirumala.mov"
           type="video/mp4"
         />
         Your browser does not support the video tag.
@@ -270,7 +270,7 @@ return (
       }}
     >
       <source
-        src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/sunrayshadow.mp4"
+        src="https://rnuiwvfcdorupidgnovp.supabase.co/storage/v1/object/public/avatars/Tirumala.mov"
         type="video/mp4"
       />
       Your browser does not support the video tag.
