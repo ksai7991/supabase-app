@@ -211,7 +211,7 @@ function App() {
             width: "100%",
             height: "100vh",
             margin: "0 auto",
-            backgroundColor: "rgba(255, 255, 255, 0.85)",
+            backgroundColor: "transparent",
             borderRadius: "0"
           }}
         >
