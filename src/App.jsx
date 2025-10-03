@@ -212,8 +212,7 @@ function App() {
             height: "100vh",
             margin: "0 auto",
             backgroundColor: "rgba(255, 255, 255, 0.85)",
-            borderRadius: "0",
-            boxShadow: "0 4px 10px rgba(0,0,0,0.2)",
+            borderRadius: "0"
           }}
         >
           <h1>Login or Sign Up</h1>
