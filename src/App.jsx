@@ -192,7 +192,7 @@ function App() {
             left: 0,
             width: "100%",
             height: "100%",
-            objectFit: "cover",
+            objectFit: "contain",
             zIndex: -1,
           }}
         >
