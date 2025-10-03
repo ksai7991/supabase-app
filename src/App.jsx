@@ -252,7 +252,7 @@ if (!user) {
 
 
 return (
-  <div style={{ position: "relative", height: "100vh", overflow: "hidden", padding: "20px" }}>
+  <div style={{ position: "relative", width: "100%", height: "100vh", overflow: "hidden" }}>
     {/* Background video */}
     <video
       autoPlay
@@ -265,7 +265,7 @@ return (
         left: 0,
         width: "100%",
         height: "100%",
-        objectFit: "cover",  // use cover for full-screen background
+        objectFit: "cover", // full-screen cover
         zIndex: -1,
       }}
     >
@@ -276,13 +276,15 @@ return (
       Your browser does not support the video tag.
     </video>
 
-    {/* Content */}
+    {/* Centered content */}
     <div
       style={{
-        position: "relative",
-        zIndex: 1,
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        transform: "translate(-50%, -50%)", // center vertically + horizontally
+        width: "90%", // responsive width
         maxWidth: "600px",
-        margin: "0 auto",
         padding: "40px",
         backgroundColor: "rgba(255, 255, 255, 0.85)",
         borderRadius: "12px",
@@ -290,6 +292,7 @@ return (
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
+        zIndex: 1,
       }}
     >
       <h1>Welcome, {user.email}</h1>
@@ -300,7 +303,7 @@ return (
           <img
             src={avatarUrl}
             alt="Avatar"
-            width={150}  // bigger avatar
+            width={150}
             height={150}
             style={{ borderRadius: "50%", objectFit: "cover" }}
           />
@@ -336,6 +339,7 @@ return (
     </div>
   </div>
 );
+
 
 }
 
